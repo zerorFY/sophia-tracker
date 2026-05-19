@@ -4,6 +4,7 @@ const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
 
 let items = [];
 let checkins = {};
+const pendingSaves = new Map();
 
 function getMonday(date) {
     const d = new Date(date);
@@ -29,6 +30,15 @@ function formatFullDate(date) {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+}
+
+function formatDisplayDateTime(date) {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}/${month}/${day} ${hours}:${minutes}`;
 }
 
 function getWeekDates() {
@@ -189,32 +199,57 @@ function renderBody(weekDates) {
 }
 
 async function handleToggle(button, item, day) {
+    clearError();
     const checked = !button.classList.contains('checked');
+    const previous = itemIsChecked(item.id, day);
+    const previousUpdatedAt = checkins[item.id]?.[day]?.updatedAt || '';
+    const saveKey = `${item.id}|${day}`;
+    const saveVersion = (pendingSaves.get(saveKey) || 0) + 1;
+    pendingSaves.set(saveKey, saveVersion);
+
     button.classList.toggle('checked', checked);
-    button.disabled = true;
 
     checkins[item.id] = checkins[item.id] || {};
     checkins[item.id][day] = checkins[item.id][day] || {};
     checkins[item.id][day].checked = checked;
+    checkins[item.id][day].updatedAt = checked ? formatDisplayDateTime(new Date()) : '';
+    updateTimeDisplay(button, checkins[item.id][day].updatedAt);
     updateSummary();
-    setSaveStatus('Saving...', 'saving');
 
     try {
         await saveToSheet(item, day, checked);
-        const fresh = await getJson('checkins');
-        checkins = fresh.checkins || {};
-        setSaveStatus('Saved to Sheet', 'saved');
-        renderBody(getWeekDates());
-        updateSummary();
+        if (pendingSaves.get(saveKey) === saveVersion) {
+            pendingSaves.delete(saveKey);
+        }
     } catch (error) {
-        checkins[item.id][day].checked = !checked;
-        button.classList.toggle('checked', !checked);
+        if (pendingSaves.get(saveKey) !== saveVersion) return;
+        pendingSaves.delete(saveKey);
+
+        checkins[item.id][day].checked = previous;
+        checkins[item.id][day].updatedAt = previousUpdatedAt;
+        button.classList.toggle('checked', previous);
+        updateTimeDisplay(button, previousUpdatedAt);
         updateSummary();
-        setSaveStatus('Save failed', 'error');
-        showError(error.message);
-    } finally {
-        button.disabled = false;
+        showError('无网络，请稍后再试');
     }
+}
+
+function updateTimeDisplay(button, value) {
+    const cell = button.closest('.check-cell');
+    if (!cell) return;
+
+    let time = cell.querySelector('.update-time');
+    if (!value) {
+        if (time) time.remove();
+        return;
+    }
+
+    if (!time) {
+        time = document.createElement('span');
+        time.className = 'update-time';
+        cell.appendChild(time);
+    }
+    time.textContent = value;
 }
 
 function showError(message) {

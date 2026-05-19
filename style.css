@@ -309,11 +309,6 @@ h3 {
     color: #fff;
 }
 
-.check-button:disabled {
-    cursor: progress;
-    opacity: 0.68;
-}
-
 .update-time {
     display: block;
     margin-top: 8px;
