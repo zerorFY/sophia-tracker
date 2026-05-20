@@ -48,7 +48,11 @@
         <section class="tracker-panel">
             <div class="panel-header">
                 <h2>Weekly Plan</h2>
-                <span id="saveStatus" class="save-status">Connecting...</span>
+                <div class="panel-actions">
+                    <button id="syncItemsBtn" class="sync-btn" type="button">同步items</button>
+                    <button id="syncCheckinsBtn" class="sync-btn primary" type="button">同步打卡记录</button>
+                    <span id="saveStatus" class="save-status">Local</span>
+                </div>
             </div>
             <p id="errorMessage" class="error-message" hidden></p>
 
@@ -65,7 +69,7 @@
         </section>
     </main>
 
-    <script src="app.js?v=bc0aeb4"></script>
+    <script src="app.js?v=local-first-1"></script>
 </body>
 
 </html>

@@ -1,10 +1,11 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbzXpTB8SIGhSercSETJVZH_mXGIIP7EKMsXsJVHdygqZw9lO7G0wKzkE4O-ieiJwl6p/exec';
 const TOKEN_STORAGE_KEY = 'sophia_tracker_access_token';
+const CACHE_STORAGE_KEY = 'sophia_tracker_cache_v2';
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 let items = [];
 let checkins = {};
-const pendingSaves = new Map();
+let dirty = false;
 
 function getMonday(date) {
     const d = new Date(date);
@@ -72,6 +73,30 @@ function resetApiToken() {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
 }
 
+function loadLocalCache() {
+    const raw = localStorage.getItem(CACHE_STORAGE_KEY);
+    if (!raw) return false;
+
+    try {
+        const data = JSON.parse(raw);
+        items = data.items || [];
+        checkins = data.checkins || {};
+        dirty = Boolean(data.dirty);
+        return items.length > 0;
+    } catch (error) {
+        return false;
+    }
+}
+
+function saveLocalCache() {
+    localStorage.setItem(CACHE_STORAGE_KEY, JSON.stringify({
+        items,
+        checkins,
+        dirty,
+        savedAt: new Date().toISOString(),
+    }));
+}
+
 async function getJson(action) {
     const response = await fetch(buildUrl(action));
     if (!response.ok) throw new Error(`Request failed: ${response.status}`);
@@ -80,40 +105,21 @@ async function getJson(action) {
     return data;
 }
 
-async function loadBootstrap() {
-    try {
-        return await getJson('bootstrap');
-    } catch (error) {
-        const [itemsResponse, checkinsResponse] = await Promise.all([
-            getJson('items'),
-            getJson('checkins'),
-        ]);
-        return {
-            ok: true,
-            items: itemsResponse.items || [],
-            checkins: checkinsResponse.checkins || {},
-        };
-    }
-}
-
-async function saveToSheet(item, day, checked) {
+async function postJson(action, payload, keepalive) {
     const url = new URL(API_URL);
     url.searchParams.set('token', getApiToken());
 
     const response = await fetch(url.toString(), {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-            action: 'saveCheckin',
-            itemLabel: item.label,
-            day,
-            checked,
-        }),
+        body: JSON.stringify({ action, ...payload }),
+        keepalive: Boolean(keepalive),
     });
 
-    if (!response.ok) throw new Error(`Save failed: ${response.status}`);
+    if (!response.ok) throw new Error(`Request failed: ${response.status}`);
     const data = await response.json();
-    if (!data.ok) throw new Error(data.error || 'Save failed');
+    if (!data.ok) throw new Error(data.error || `${action} failed`);
+    return data;
 }
 
 function itemIsScheduled(item, day) {
@@ -147,6 +153,10 @@ function setSaveStatus(text, state) {
     el.className = `save-status ${state || ''}`.trim();
 }
 
+function updateDirtyStatus() {
+    setSaveStatus(dirty ? 'Unsynced changes' : 'Local copy', dirty ? 'saving' : 'saved');
+}
+
 function renderHeader(weekDates) {
     const header = document.getElementById('dayHeader');
     header.innerHTML = '<th class="item-col">Item</th>';
@@ -169,7 +179,7 @@ function renderBody(weekDates) {
     tbody.innerHTML = '';
 
     if (!items.length) {
-        renderEmpty('No tracker items found in the Items sheet.');
+        renderEmpty('No local tracker data. Tap 同步items first.');
         return;
     }
 
@@ -197,7 +207,6 @@ function renderBody(weekDates) {
                 button.textContent = 'Y';
                 button.addEventListener('click', () => handleToggle(button, item, day));
                 cell.appendChild(button);
-
             }
 
             row.appendChild(cell);
@@ -207,37 +216,72 @@ function renderBody(weekDates) {
     });
 }
 
-async function handleToggle(button, item, day) {
+function handleToggle(button, item, day) {
     clearError();
     const checked = !button.classList.contains('checked');
-    const previous = itemIsChecked(item.id, day);
-    const previousUpdatedAt = checkins[item.id]?.[day]?.updatedAt || '';
-    const saveKey = `${item.id}|${day}`;
-    const saveVersion = (pendingSaves.get(saveKey) || 0) + 1;
-    pendingSaves.set(saveKey, saveVersion);
-
     button.classList.toggle('checked', checked);
 
     checkins[item.id] = checkins[item.id] || {};
     checkins[item.id][day] = checkins[item.id][day] || {};
     checkins[item.id][day].checked = checked;
     checkins[item.id][day].updatedAt = checked ? formatDisplayDateTime(new Date()) : '';
+    dirty = true;
+    saveLocalCache();
     updateSummary();
+    updateDirtyStatus();
+}
+
+async function syncItemsFromSheet() {
+    clearError();
+    if (!getApiToken()) {
+        showAccessGate();
+        return;
+    }
+
+    if (dirty && !window.confirm('本地有未同步的打卡记录，继续同步items会用Sheet覆盖本地内容。确定继续吗？')) {
+        return;
+    }
 
     try {
-        await saveToSheet(item, day, checked);
-        if (pendingSaves.get(saveKey) === saveVersion) {
-            pendingSaves.delete(saveKey);
-        }
-    } catch (error) {
-        if (pendingSaves.get(saveKey) !== saveVersion) return;
-        pendingSaves.delete(saveKey);
-
-        checkins[item.id][day].checked = previous;
-        checkins[item.id][day].updatedAt = previousUpdatedAt;
-        button.classList.toggle('checked', previous);
+        setSaveStatus('Syncing items...', 'saving');
+        const data = await getJson('bootstrap');
+        items = data.items || [];
+        checkins = data.checkins || {};
+        dirty = false;
+        saveLocalCache();
+        hideAccessGate();
+        renderBody(getWeekDates());
         updateSummary();
-        showError('\u65e0\u7f51\u7edc\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5');
+        updateDirtyStatus();
+    } catch (error) {
+        setSaveStatus('Sync failed', 'error');
+        showError(error.message);
+    }
+}
+
+async function syncCheckinsToSheet(options = {}) {
+    clearError();
+    if (!getApiToken()) {
+        showAccessGate();
+        return false;
+    }
+
+    if (!items.length) return false;
+    if (!dirty && !options.force) return true;
+
+    try {
+        setSaveStatus('Uploading...', 'saving');
+        await postJson('saveSnapshot', { items, checkins }, options.keepalive);
+        dirty = false;
+        saveLocalCache();
+        updateDirtyStatus();
+        return true;
+    } catch (error) {
+        dirty = true;
+        saveLocalCache();
+        setSaveStatus('Upload pending', 'error');
+        if (!options.silent) showError('\u4e0a\u4f20\u5931\u8d25\uff0c\u4e0b\u6b21\u6253\u5f00\u4ecd\u4f1a\u4fdd\u7559\u672c\u5730\u4fee\u6539');
+        return false;
     }
 }
 
@@ -253,45 +297,22 @@ function clearError() {
     el.hidden = true;
 }
 
-async function loadFromSheet() {
-    clearError();
-    if (!getApiToken()) {
-        showAccessGate();
-        setSaveStatus('Access needed', 'error');
-        return false;
-    }
-
-    hideAccessGate();
-    setSaveStatus('Loading Sheet...', 'saving');
-    const data = await loadBootstrap();
-
-    items = data.items || [];
-    checkins = data.checkins || {};
-    setSaveStatus('Connected to Sheet', 'saved');
-    return true;
-}
-
-async function render() {
+function render() {
     const weekDates = getWeekDates();
     document.getElementById('weekRange').textContent =
         `${formatShortDate(weekDates[0].date)} - ${formatShortDate(weekDates[6].date)}`;
     renderHeader(weekDates);
-    renderEmpty('Loading from Google Sheet...');
 
-    try {
-        const loaded = await loadFromSheet();
-        if (!loaded) return;
+    if (loadLocalCache()) {
         renderBody(weekDates);
         updateSummary();
-    } catch (error) {
-        if (String(error.message).toLowerCase().includes('unauthorized')) {
-            resetApiToken();
-            showAccessGate();
-        }
-        setSaveStatus('Sheet error', 'error');
-        showError(error.message);
-        renderEmpty('Could not load Google Sheet data.');
+        updateDirtyStatus();
+        return;
     }
+
+    renderEmpty('No local tracker data. Tap 同步items first.');
+    setSaveStatus('Local empty', 'error');
+    if (!getApiToken()) showAccessGate();
 }
 
 function showAccessGate() {
@@ -308,11 +329,31 @@ function setupAccessForm() {
         const token = document.getElementById('accessToken').value;
         if (!token.trim()) return;
         setApiToken(token);
-        render();
+        hideAccessGate();
+        syncItemsFromSheet();
+    });
+}
+
+function setupSyncButtons() {
+    document.getElementById('syncItemsBtn').addEventListener('click', syncItemsFromSheet);
+    document.getElementById('syncCheckinsBtn').addEventListener('click', () => syncCheckinsToSheet({ force: true }));
+}
+
+function setupCloseSync() {
+    const flush = () => {
+        if (!dirty || !getApiToken() || !items.length) return;
+        syncCheckinsToSheet({ keepalive: true, silent: true });
+    };
+
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') flush();
     });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     setupAccessForm();
+    setupSyncButtons();
+    setupCloseSync();
     render();
 });

@@ -22,6 +22,7 @@ function doPost(e) {
 
   const body = JSON.parse(e.postData.contents || '{}');
   if (body.action === 'saveCheckin') return saveCheckin(body);
+  if (body.action === 'saveSnapshot') return saveSnapshot(body);
   if (body.action === 'syncStructure') return syncStructure();
 
   return json({ ok: false, error: 'Unknown action' });
@@ -63,6 +64,36 @@ function saveCheckin(body) {
   sheet.getRange(itemRowIndex + 2, dayCol + 1).setValue(
     checked ? Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy/M/d HH:mm') : ''
   );
+
+  return json({ ok: true });
+}
+
+function saveSnapshot(body) {
+  const items = Array.isArray(body.items) ? body.items : [];
+  const checkins = body.checkins || {};
+  if (!items.length) return json({ ok: false, error: 'No items to save' });
+
+  const sheet = getOrCreateSheet_(CHECKINS_SHEET);
+  const values = readTopBlockValues_(sheet);
+  const headerRowIndex = findHeaderRow_(values);
+  if (headerRowIndex === -1) return json({ ok: false, error: 'Checkins header row not found' });
+
+  const header = values[headerRowIndex].map(String);
+  const dayColumns = getDayColumns_(header);
+
+  items.forEach(item => {
+    const itemRowIndex = findItemRow_(values, headerRowIndex + 1, item.label);
+    if (itemRowIndex === -1) return;
+
+    DAYS.forEach(day => {
+      const col = dayColumns[day];
+      if (col == null || !item.days || !item.days[day]) return;
+
+      const cell = checkins[item.id] && checkins[item.id][day] ? checkins[item.id][day] : {};
+      sheet.getRange(itemRowIndex + 1, col + 1).setValue(cell.checked ? 'Y' : '');
+      sheet.getRange(itemRowIndex + 2, col + 1).setValue(cell.checked ? (cell.updatedAt || Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy/M/d HH:mm')) : '');
+    });
+  });
 
   return json({ ok: true });
 }
