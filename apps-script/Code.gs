@@ -2,8 +2,8 @@ const SECRET_TOKEN = 'PASTE_YOUR_TOKEN_HERE';
 
 const ITEMS_SHEET = 'Items';
 const CHECKINS_SHEET = 'Checkins';
-const CACHE_SHEET = 'Cache';
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const TOP_BLOCK_MAX_ROWS = 80;
 
 function doGet(e) {
   if (!isAuthorized(e)) return json({ ok: false, error: 'Unauthorized' });
@@ -28,35 +28,23 @@ function doPost(e) {
 }
 
 function bootstrap() {
-  const cached = readCache_();
-  if (cached) return json(cached);
-
-  return json(rebuildCache_());
-}
-
-function getItems() {
-  return json({ ok: true, items: readItemsData_().items });
+  return json(readTopCheckinsSnapshot_());
 }
 
 function getCheckins() {
-  const cached = readCache_();
-  if (cached) return json({ ok: true, checkins: cached.checkins || {} });
-  return json({ ok: true, checkins: rebuildCache_().checkins || {} });
+  return json({ ok: true, checkins: readTopCheckinsSnapshot_().checkins });
 }
 
-function syncStructure() {
-  return json(rebuildCache_());
+function getItems() {
+  return json({ ok: true, items: readTopCheckinsSnapshot_().items });
 }
 
 function saveCheckin(body) {
-  const itemsData = readItemsData_();
-  ensureCurrentCheckinsBlock_(itemsData);
-
   const sheet = SpreadsheetApp.getActive().getSheetByName(CHECKINS_SHEET);
   if (!sheet) return json({ ok: false, error: 'Checkins sheet not found' });
 
-  const latestValues = readTopCheckinsValues_(sheet, itemsData.items.length);
-  const headerRowIndex = findHeaderRow_(latestValues);
+  const values = readTopBlockValues_(sheet);
+  const headerRowIndex = findHeaderRow_(values);
   if (headerRowIndex === -1) return json({ ok: false, error: 'Checkins header row not found' });
 
   const itemLabel = String(body.itemLabel || '').trim();
@@ -64,79 +52,25 @@ function saveCheckin(body) {
   const checked = Boolean(body.checked);
   if (!itemLabel || DAYS.indexOf(day) === -1) return json({ ok: false, error: 'Invalid itemLabel or day' });
 
-  const header = latestValues[headerRowIndex].map(String);
+  const header = values[headerRowIndex].map(String);
   const dayColumns = getDayColumns_(header);
   const dayCol = dayColumns[day];
-  const relativeItemRowIndex = findItemRow_(latestValues, headerRowIndex + 1, itemLabel);
+  const itemRowIndex = findItemRow_(values, headerRowIndex + 1, itemLabel);
   if (dayCol == null) return json({ ok: false, error: 'Day column not found' });
-  if (relativeItemRowIndex === -1) return json({ ok: false, error: 'Item row not found' });
+  if (itemRowIndex === -1) return json({ ok: false, error: 'Item row not found' });
 
-  sheet.getRange(relativeItemRowIndex + 1, dayCol + 1).setValue(checked ? 'Y' : '');
-  sheet.getRange(relativeItemRowIndex + 2, dayCol + 1).setValue(
+  sheet.getRange(itemRowIndex + 1, dayCol + 1).setValue(checked ? 'Y' : '');
+  sheet.getRange(itemRowIndex + 2, dayCol + 1).setValue(
     checked ? Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy/M/d HH:mm') : ''
   );
 
-  writeCache_(buildSnapshot_(itemsData));
   return json({ ok: true });
 }
 
-function rebuildCache_() {
+function syncStructure() {
   const itemsData = readItemsData_();
-  ensureCurrentCheckinsBlock_(itemsData);
-  const snapshot = buildSnapshot_(itemsData);
-  writeCache_(snapshot);
-  return snapshot;
-}
-
-function buildSnapshot_(itemsData) {
-  return {
-    ok: true,
-    items: itemsData.items,
-    checkins: readLatestCheckins_(itemsData.items.length),
-    version: itemsData.version,
-    cachedAt: new Date().toISOString(),
-  };
-}
-
-function readCache_() {
-  const sheet = SpreadsheetApp.getActive().getSheetByName(CACHE_SHEET);
-  if (!sheet) return null;
-
-  const raw = String(sheet.getRange('B1').getValue() || '').trim();
-  if (!raw) return null;
-
-  try {
-    const data = JSON.parse(raw);
-    if (!data || !data.ok || !Array.isArray(data.items)) return null;
-    return data;
-  } catch (error) {
-    return null;
-  }
-}
-
-function writeCache_(snapshot) {
-  const ss = SpreadsheetApp.getActive();
-  let sheet = ss.getSheetByName(CACHE_SHEET);
-  if (!sheet) sheet = ss.insertSheet(CACHE_SHEET);
-
-  sheet.getRange('A1').setValue('updatedAt');
-  sheet.getRange('B1').setValue(JSON.stringify(snapshot));
-  sheet.getRange('A2').setValue(new Date());
-  sheet.hideSheet();
-}
-
-function ensureCurrentCheckinsBlock_(itemsData) {
-  const ss = SpreadsheetApp.getActive();
-  let sheet = ss.getSheetByName(CHECKINS_SHEET);
-  if (!sheet) sheet = ss.insertSheet(CHECKINS_SHEET);
-
-  const existingValues = readTopCheckinsValues_(sheet, itemsData.items.length);
-  const headerRowIndex = findHeaderRow_(existingValues);
-  const latestVersion = getLatestVersion_(existingValues, headerRowIndex);
-
-  if (headerRowIndex !== -1 && latestVersion === itemsData.version) return;
-
-  const previous = headerRowIndex === -1 ? {} : parseCheckinsBlock_(existingValues, headerRowIndex);
+  const sheet = getOrCreateSheet_(CHECKINS_SHEET);
+  const previous = readTopCheckinsSnapshot_().checkins || {};
   const block = buildCheckinsBlock_(itemsData, previous);
 
   if (sheet.getLastRow() > 0) {
@@ -145,6 +79,66 @@ function ensureCurrentCheckinsBlock_(itemsData) {
 
   sheet.getRange(1, 1, block.length, 8).setValues(block);
   formatLatestBlock_(sheet, block.length);
+
+  return json(readTopCheckinsSnapshot_());
+}
+
+function readTopCheckinsSnapshot_() {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(CHECKINS_SHEET);
+  if (!sheet) return { ok: true, items: [], checkins: {} };
+
+  const values = readTopBlockDisplayValues_(sheet);
+  const headerRowIndex = findHeaderRow_(values);
+  if (headerRowIndex === -1) return { ok: true, items: [], checkins: {} };
+
+  const header = values[headerRowIndex].map(String);
+  const dayColumns = getDayColumns_(header);
+  const items = [];
+  const checkins = {};
+
+  for (let r = headerRowIndex + 1; r < values.length; r += 2) {
+    const itemLabel = String(values[r][0] || '').trim();
+    if (!itemLabel) break;
+    if (itemLabel === 'WEEK' || itemLabel === 'Item') break;
+    if (itemLabel.toLowerCase() === 'update time') continue;
+
+    const itemId = makeId_(itemLabel);
+    const itemDays = {};
+    checkins[itemId] = {};
+
+    DAYS.forEach(day => {
+      const col = dayColumns[day];
+      if (col == null) return;
+
+      const value = String(values[r][col] || '').trim().toUpperCase();
+      const updatedAt = values[r + 1] ? String(values[r + 1][col] || '').trim() : '';
+      const scheduled = value !== 'N/A';
+
+      itemDays[day] = scheduled;
+      checkins[itemId][day] = {
+        checked: scheduled && value === 'Y',
+        updatedAt: scheduled ? updatedAt : '',
+      };
+    });
+
+    items.push({
+      id: itemId,
+      label: itemLabel,
+      days: itemDays,
+    });
+  }
+
+  return { ok: true, items, checkins };
+}
+
+function readTopBlockValues_(sheet) {
+  const rowCount = Math.min(Math.max(sheet.getLastRow(), 1), TOP_BLOCK_MAX_ROWS);
+  return sheet.getRange(1, 1, rowCount, 8).getValues();
+}
+
+function readTopBlockDisplayValues_(sheet) {
+  const rowCount = Math.min(Math.max(sheet.getLastRow(), 1), TOP_BLOCK_MAX_ROWS);
+  return sheet.getRange(1, 1, rowCount, 8).getDisplayValues();
 }
 
 function readItemsData_() {
@@ -188,34 +182,6 @@ function readItemsData_() {
   };
 }
 
-function readLatestCheckins_(itemCount) {
-  const sheet = SpreadsheetApp.getActive().getSheetByName(CHECKINS_SHEET);
-  if (!sheet) return {};
-
-  const values = readTopCheckinsDisplayValues_(sheet, itemCount);
-  const headerRowIndex = findHeaderRow_(values);
-  if (headerRowIndex === -1) return {};
-
-  return parseCheckinsBlock_(values, headerRowIndex);
-}
-
-function readTopCheckinsValues_(sheet, itemCount) {
-  const rowCount = getTopBlockReadRows_(sheet, itemCount);
-  return sheet.getRange(1, 1, rowCount, 8).getValues();
-}
-
-function readTopCheckinsDisplayValues_(sheet, itemCount) {
-  const rowCount = getTopBlockReadRows_(sheet, itemCount);
-  return sheet.getRange(1, 1, rowCount, 8).getDisplayValues();
-}
-
-function getTopBlockReadRows_(sheet, itemCount) {
-  const lastRow = sheet.getLastRow();
-  if (!lastRow) return 1;
-  const expectedRows = Math.max(8, itemCount * 2 + 4);
-  return Math.min(lastRow, expectedRows);
-}
-
 function buildCheckinsBlock_(itemsData, previous) {
   const now = new Date();
   const weekStart = formatWeekStart_(getMonday_(now));
@@ -249,51 +215,16 @@ function buildCheckinsBlock_(itemsData, previous) {
   return rows;
 }
 
-function parseCheckinsBlock_(values, headerRowIndex) {
-  const header = values[headerRowIndex].map(String);
-  const dayColumns = getDayColumns_(header);
-  const checkins = {};
-
-  for (let r = headerRowIndex + 1; r < values.length; r += 2) {
-    const first = String(values[r][0] || '').trim();
-    if (!first) break;
-    if (first === 'WEEK' || first === 'Item') break;
-    if (first.toLowerCase() === 'update time') continue;
-
-    const itemId = makeId_(first);
-    checkins[itemId] = {};
-
-    DAYS.forEach(day => {
-      const col = dayColumns[day];
-      if (col == null) return;
-      const checkedValue = String(values[r][col] || '').trim().toUpperCase();
-      const updatedAt = values[r + 1] ? String(values[r + 1][col] || '').trim() : '';
-      checkins[itemId][day] = {
-        checked: checkedValue === 'Y',
-        updatedAt,
-      };
-    });
-  }
-
-  return checkins;
-}
-
 function formatLatestBlock_(sheet, rowCount) {
   sheet.getRange(1, 1, rowCount, 8).setBorder(true, true, true, true, true, true);
   sheet.getRange(1, 1, 1, 8).setFontWeight('bold').setBackground('#EAF4F1');
   sheet.getRange(2, 1, 1, 8).setFontWeight('bold').setFontColor('#FFFFFF').setBackground('#24766B');
-  sheet.getRange(3, 1, rowCount - 2, 8).setWrap(true);
+  sheet.getRange(3, 1, Math.max(rowCount - 2, 1), 8).setWrap(true);
 }
 
-function getLatestVersion_(values, headerRowIndex) {
-  if (headerRowIndex <= 0) return '';
-  const meta = values[headerRowIndex - 1] || [];
-  for (let i = 0; i < meta.length; i++) {
-    if (String(meta[i] || '').trim() === 'ITEMS VERSION') {
-      return String(meta[i + 1] || '').trim();
-    }
-  }
-  return '';
+function getOrCreateSheet_(name) {
+  const ss = SpreadsheetApp.getActive();
+  return ss.getSheetByName(name) || ss.insertSheet(name);
 }
 
 function getDayColumns_(header) {
