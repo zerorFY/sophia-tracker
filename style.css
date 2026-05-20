@@ -1,16 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap');
+
 :root {
-    --bg: #f7f3ea;
-    --ink: #26231f;
-    --muted: #756d63;
-    --line: #ded3c2;
-    --panel: #fffdf8;
-    --accent: #25766a;
-    --accent-strong: #17574d;
-    --accent-soft: #d9eee8;
-    --gold: #d89527;
-    --disabled: #f1eee8;
-    --disabled-text: #aaa196;
-    --shadow: 0 18px 50px rgba(66, 55, 38, 0.12);
+    --kuromi-purple: #7B2D8E;
+    --kuromi-dark: #2D1B36;
+    --kuromi-magenta: #C850C0;
+    --kuromi-pink: #F5A0CB;
+    --kuromi-light-pink: #FFD6EC;
+    --kuromi-lavender: #E8D5F5;
+    --kuromi-black: #1A1A2E;
+    --kuromi-white: #FFF5FA;
+    --kuromi-star: #FFD700;
+    --danger: #FF6B8A;
+    --card-shadow: 0 8px 32px rgba(123, 45, 142, 0.2);
+    --glow: 0 0 20px rgba(200, 80, 192, 0.3);
 }
 
 * {
@@ -20,18 +22,42 @@
 body {
     margin: 0;
     min-height: 100vh;
+    background: linear-gradient(135deg, #2D1B36 0%, #1A1A2E 42%, #2D1B36 100%);
+    color: var(--kuromi-white);
+    font-family: 'Nunito', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overflow-x: hidden;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
     background:
-        linear-gradient(135deg, rgba(37, 118, 106, 0.12), transparent 34%),
-        linear-gradient(225deg, rgba(216, 149, 39, 0.14), transparent 38%),
-        var(--bg);
-    color: var(--ink);
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        radial-gradient(2px 2px at 10% 20%, rgba(255, 214, 236, 0.6), transparent),
+        radial-gradient(2px 2px at 30% 60%, rgba(200, 80, 192, 0.4), transparent),
+        radial-gradient(3px 3px at 50% 10%, rgba(255, 215, 0, 0.5), transparent),
+        radial-gradient(2px 2px at 70% 40%, rgba(245, 160, 203, 0.5), transparent),
+        radial-gradient(2px 2px at 90% 80%, rgba(232, 213, 245, 0.4), transparent),
+        radial-gradient(3px 3px at 20% 90%, rgba(255, 215, 0, 0.4), transparent),
+        radial-gradient(2px 2px at 80% 15%, rgba(200, 80, 192, 0.3), transparent),
+        radial-gradient(2px 2px at 60% 75%, rgba(255, 214, 236, 0.5), transparent);
+    pointer-events: none;
+    z-index: 0;
+    animation: twinkle 4s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+    from { opacity: 0.58; }
+    to { opacity: 1; }
 }
 
 .app-shell {
-    width: min(1180px, calc(100% - 32px));
+    width: min(1120px, calc(100% - 28px));
     margin: 0 auto;
-    padding: 32px 0 48px;
+    padding: 24px 0 40px;
+    position: relative;
+    z-index: 1;
 }
 
 .topbar {
@@ -39,60 +65,80 @@ body {
     align-items: flex-end;
     justify-content: space-between;
     gap: 24px;
-    margin-bottom: 20px;
+    margin-bottom: 22px;
+    text-align: left;
+}
+
+.kuromi-banner {
+    margin: 0 0 8px;
+    font-size: 1.35rem;
+    letter-spacing: 0;
 }
 
 .eyebrow,
 .summary-label,
 .week-label {
     margin: 0;
-    color: var(--muted);
+    color: var(--kuromi-lavender);
     font-size: 0.78rem;
-    font-weight: 800;
+    font-weight: 900;
     letter-spacing: 0;
     text-transform: uppercase;
+    opacity: 0.82;
 }
 
 h1,
-h2,
-h3 {
+h2 {
     margin: 0;
     letter-spacing: 0;
 }
 
 h1 {
-    font-size: clamp(2rem, 5vw, 4.6rem);
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2.1rem, 5.8vw, 4.6rem);
     line-height: 0.95;
+    background: linear-gradient(135deg, var(--kuromi-pink), var(--kuromi-magenta), var(--kuromi-lavender));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 h2 {
-    font-size: 1.35rem;
+    font-family: 'Fredoka One', cursive;
+    color: var(--kuromi-pink);
+    font-size: 1.25rem;
 }
 
-h3 {
+.header-subtitle {
+    margin: 10px 0 0;
+    color: var(--kuromi-lavender);
     font-size: 1rem;
-    margin-bottom: 8px;
+    font-weight: 800;
+    opacity: 0.82;
 }
 
 .week-card,
 .summary-strip,
 .tracker-panel,
 .access-gate {
-    background: rgba(255, 253, 248, 0.88);
-    border: 1px solid rgba(222, 211, 194, 0.9);
-    box-shadow: var(--shadow);
+    background: linear-gradient(145deg, rgba(45, 27, 54, 0.86), rgba(26, 26, 46, 0.92));
+    border: 1px solid rgba(200, 80, 192, 0.24);
+    box-shadow: var(--card-shadow);
+    backdrop-filter: blur(18px);
 }
 
 .week-card {
     min-width: 230px;
-    border-radius: 8px;
+    border-radius: 24px;
     padding: 16px 18px;
 }
 
 .week-card strong {
     display: block;
-    margin-top: 4px;
-    font-size: 1.05rem;
+    margin-top: 6px;
+    color: var(--kuromi-star);
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.15rem;
 }
 
 .summary-strip {
@@ -100,27 +146,29 @@ h3 {
     grid-template-columns: repeat(3, 1fr);
     gap: 1px;
     overflow: hidden;
-    border-radius: 8px;
+    border-radius: 24px;
     margin-bottom: 18px;
 }
 
 .summary-strip > div {
-    min-height: 92px;
+    min-height: 96px;
     padding: 18px;
-    background: var(--panel);
+    background: rgba(26, 26, 46, 0.42);
 }
 
 .summary-strip strong {
     display: block;
     margin-top: 6px;
-    font-size: 2rem;
-    color: var(--accent-strong);
+    color: var(--kuromi-star);
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.2rem;
+    text-shadow: 0 0 12px rgba(255, 215, 0, 0.45);
 }
 
-.tracker-panel,
-.access-gate {
-    border-radius: 8px;
-    padding: 18px;
+.access-gate,
+.tracker-panel {
+    border-radius: 24px;
+    padding: 22px;
 }
 
 .access-gate {
@@ -137,23 +185,46 @@ h3 {
     flex: 1;
     min-width: 0;
     height: 44px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 0 12px;
-    color: var(--ink);
+    border: 2px solid rgba(200, 80, 192, 0.3);
+    border-radius: 999px;
+    padding: 0 16px;
+    background: rgba(123, 45, 142, 0.14);
+    color: var(--kuromi-white);
     font: inherit;
+    outline: none;
 }
 
-.access-form button {
-    height: 44px;
-    border: 0;
-    border-radius: 8px;
-    padding: 0 18px;
-    background: var(--accent);
-    color: #fff;
+.access-form input::placeholder {
+    color: rgba(232, 213, 245, 0.55);
+}
+
+.access-form button,
+.sync-btn {
+    height: 40px;
+    border: 2px solid rgba(200, 80, 192, 0.35);
+    border-radius: 999px;
+    padding: 0 16px;
+    background: rgba(123, 45, 142, 0.16);
+    color: var(--kuromi-lavender);
     cursor: pointer;
     font: inherit;
+    font-size: 0.88rem;
     font-weight: 900;
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.access-form button,
+.sync-btn.primary {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: linear-gradient(135deg, var(--kuromi-purple), var(--kuromi-magenta));
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(123, 45, 142, 0.35), var(--glow);
+}
+
+.access-form button:hover,
+.sync-btn:hover {
+    transform: scale(1.04);
+    border-color: var(--kuromi-magenta);
 }
 
 .panel-header {
@@ -172,60 +243,42 @@ h3 {
     flex-wrap: wrap;
 }
 
-.sync-btn {
-    height: 34px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 0 12px;
-    background: #fff;
-    color: var(--accent-strong);
-    cursor: pointer;
-    font: inherit;
-    font-size: 0.86rem;
-    font-weight: 900;
-}
-
-.sync-btn.primary {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: #fff;
-}
-
 .save-status {
-    min-width: 112px;
+    min-width: 126px;
     border-radius: 999px;
-    padding: 7px 12px;
-    background: var(--accent-soft);
-    color: var(--accent-strong);
-    font-size: 0.84rem;
-    font-weight: 800;
+    padding: 8px 12px;
+    background: rgba(232, 213, 245, 0.12);
+    color: var(--kuromi-lavender);
+    border: 1px solid rgba(200, 80, 192, 0.24);
+    font-size: 0.82rem;
+    font-weight: 900;
     text-align: center;
 }
 
 .save-status.saving {
-    background: #fff0c9;
-    color: #8a5b05;
+    background: rgba(255, 215, 0, 0.16);
+    color: var(--kuromi-star);
 }
 
 .save-status.saved {
-    background: #dbeedf;
-    color: #23612e;
+    background: rgba(46, 204, 113, 0.16);
+    color: #B7FFD0;
 }
 
 .save-status.error {
-    background: #ffe0dd;
-    color: #9b241a;
+    background: rgba(255, 107, 138, 0.16);
+    color: #FFB8C8;
 }
 
 .error-message {
     margin: 0 0 14px;
-    border: 1px solid #efb3ad;
-    border-radius: 8px;
+    border: 1px solid rgba(255, 107, 138, 0.4);
+    border-radius: 16px;
     padding: 10px 12px;
-    background: #fff4f2;
-    color: #9b241a;
+    background: rgba(255, 107, 138, 0.12);
+    color: #FFD6DF;
     font-size: 0.92rem;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .table-wrap {
@@ -237,127 +290,176 @@ h3 {
     width: 100%;
     min-width: 860px;
     border-collapse: separate;
-    border-spacing: 0;
+    border-spacing: 4px;
     table-layout: fixed;
 }
 
 .tracker-table th,
 .tracker-table td {
-    border-right: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-    height: 82px;
-    padding: 10px;
+    height: 72px;
+    padding: 8px 6px;
     text-align: center;
-    background: #fffdf8;
-}
-
-.tracker-table th:first-child,
-.tracker-table td:first-child {
-    border-left: 1px solid var(--line);
+    vertical-align: middle;
 }
 
 .tracker-table thead th {
-    border-top: 1px solid var(--line);
-    background: #fbf4e8;
-    color: var(--accent-strong);
-}
-
-.tracker-table thead th:first-child {
-    border-top-left-radius: 8px;
-}
-
-.tracker-table thead th:last-child {
-    border-top-right-radius: 8px;
+    color: var(--kuromi-magenta);
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.86rem;
 }
 
 .item-col {
-    width: 250px;
+    width: 260px;
 }
 
 .item-cell {
-    text-align: left;
+    text-align: left !important;
+    color: var(--kuromi-lavender);
+    font-weight: 900;
+    padding-left: 10px !important;
 }
 
 .item-name {
     display: block;
-    font-size: 1rem;
-    font-weight: 900;
-}
-
-.item-detail {
-    display: block;
-    margin-top: 5px;
-    color: var(--muted);
-    font-size: 0.85rem;
+    font-size: 0.95rem;
+    line-height: 1.25;
 }
 
 .day-name {
     display: block;
-    font-size: 0.96rem;
+    font-size: 0.9rem;
 }
 
 .day-date {
     display: block;
-    margin-top: 4px;
-    color: var(--muted);
-    font-size: 0.8rem;
+    margin-top: 3px;
+    color: rgba(232, 213, 245, 0.68);
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.today {
+    background: rgba(200, 80, 192, 0.1);
+    border-radius: 14px;
+    box-shadow: inset 0 0 0 2px rgba(255, 215, 0, 0.2);
 }
 
 .check-cell.disabled {
-    background: var(--disabled);
-    color: var(--disabled-text);
+    color: rgba(232, 213, 245, 0.28);
 }
 
 .not-scheduled {
-    color: var(--disabled-text);
-    font-size: 0.82rem;
-    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 38px;
+    color: rgba(232, 213, 245, 0.32);
+    font-size: 0.78rem;
+    font-weight: 900;
 }
 
 .check-button {
     width: 42px;
     height: 42px;
-    border: 2px solid #b7aa99;
-    border-radius: 50%;
-    background: #fff;
+    border: 3px solid rgba(200, 80, 192, 0.42);
+    border-radius: 14px;
+    background: rgba(123, 45, 142, 0.12);
     color: transparent;
     cursor: pointer;
     font-size: 1.25rem;
     line-height: 1;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease, background 0.2s ease;
 }
 
 .check-button:hover {
-    border-color: var(--accent);
+    border-color: var(--kuromi-magenta);
+    background: rgba(200, 80, 192, 0.16);
+    transform: scale(1.08);
 }
 
 .check-button.checked {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: #fff;
+    border-color: var(--kuromi-magenta);
+    background: linear-gradient(135deg, var(--kuromi-magenta), var(--kuromi-purple));
+    color: white;
+    box-shadow: 0 0 12px rgba(200, 80, 192, 0.44);
+    animation: checkPop 0.25s ease;
+}
+
+@keyframes checkPop {
+    0% { transform: scale(0.86); }
+    55% { transform: scale(1.16); }
+    100% { transform: scale(1); }
 }
 
 .empty-row {
     height: 120px;
-    color: var(--muted);
-    font-weight: 800;
+    color: rgba(232, 213, 245, 0.58);
+    font-weight: 900;
 }
 
-.today {
-    box-shadow: inset 0 0 0 3px rgba(216, 149, 39, 0.24);
+.floating-deco {
+    position: fixed;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.15;
+    font-size: 2rem;
+}
+
+.floating-deco:nth-child(1) { top: 10%; left: 5%; animation: float1 6s ease-in-out infinite; }
+.floating-deco:nth-child(2) { top: 30%; right: 3%; animation: float2 8s ease-in-out infinite; }
+.floating-deco:nth-child(3) { bottom: 20%; left: 8%; animation: float1 7s ease-in-out infinite 2s; }
+.floating-deco:nth-child(4) { bottom: 10%; right: 6%; animation: float2 5s ease-in-out infinite 1s; }
+.floating-deco:nth-child(5) { top: 55%; left: 2%; animation: float1 9s ease-in-out infinite 3s; }
+.floating-deco:nth-child(6) { top: 70%; right: 4%; animation: float2 6s ease-in-out infinite 2s; }
+
+@keyframes float1 {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(10deg); }
+}
+
+@keyframes float2 {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-15px) rotate(-10deg); }
+}
+
+.deco-row {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 26px;
+    opacity: 0.54;
+    font-size: 1.25rem;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 22px;
+    padding: 14px;
+    color: rgba(232, 213, 245, 0.44);
+    font-size: 0.82rem;
+    font-weight: 800;
 }
 
 @media (max-width: 760px) {
     .app-shell {
-        width: min(100% - 20px, 1180px);
-        padding-top: 20px;
+        width: min(100% - 18px, 1120px);
+        padding-top: 16px;
     }
 
     .topbar {
         display: block;
+        text-align: center;
+    }
+
+    .kuromi-banner {
+        font-size: 1.1rem;
     }
 
     .week-card {
         margin-top: 18px;
+        min-width: 0;
     }
 
     .summary-strip {
@@ -382,5 +484,15 @@ h3 {
     .access-form button {
         width: 100%;
         margin-top: 10px;
+    }
+
+    .tracker-panel,
+    .access-gate {
+        padding: 14px;
+        border-radius: 18px;
+    }
+
+    .tracker-table {
+        min-width: 760px;
     }
 }
