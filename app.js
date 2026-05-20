@@ -80,6 +80,22 @@ async function getJson(action) {
     return data;
 }
 
+async function loadBootstrap() {
+    try {
+        return await getJson('bootstrap');
+    } catch (error) {
+        const [itemsResponse, checkinsResponse] = await Promise.all([
+            getJson('items'),
+            getJson('checkins'),
+        ]);
+        return {
+            ok: true,
+            items: itemsResponse.items || [],
+            checkins: checkinsResponse.checkins || {},
+        };
+    }
+}
+
 async function saveToSheet(item, day, checked) {
     const url = new URL(API_URL);
     url.searchParams.set('token', getApiToken());
@@ -230,7 +246,7 @@ async function handleToggle(button, item, day) {
         button.classList.toggle('checked', previous);
         updateTimeDisplay(button, previousUpdatedAt);
         updateSummary();
-        showError('无网络，请稍后再试');
+        showError('\u65e0\u7f51\u7edc\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5');
     }
 }
 
@@ -274,13 +290,10 @@ async function loadFromSheet() {
 
     hideAccessGate();
     setSaveStatus('Loading Sheet...', 'saving');
-    const [itemsResponse, checkinsResponse] = await Promise.all([
-        getJson('items'),
-        getJson('checkins'),
-    ]);
+    const data = await loadBootstrap();
 
-    items = itemsResponse.items || [];
-    checkins = checkinsResponse.checkins || {};
+    items = data.items || [];
+    checkins = data.checkins || {};
     setSaveStatus('Connected to Sheet', 'saved');
     return true;
 }
