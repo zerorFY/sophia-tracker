@@ -2,6 +2,7 @@ const SECRET_TOKEN = 'PASTE_YOUR_TOKEN_HERE';
 
 const ITEMS_SHEET = 'Items';
 const CHECKINS_SHEET = 'Checkins';
+const CACHE_SHEET = 'Cache';
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 function doGet(e) {
@@ -11,6 +12,7 @@ function doGet(e) {
   if (action === 'bootstrap') return bootstrap();
   if (action === 'items') return getItems();
   if (action === 'checkins') return getCheckins();
+  if (action === 'syncStructure') return syncStructure();
 
   return json({ ok: false, error: 'Unknown action' });
 }
@@ -20,18 +22,16 @@ function doPost(e) {
 
   const body = JSON.parse(e.postData.contents || '{}');
   if (body.action === 'saveCheckin') return saveCheckin(body);
+  if (body.action === 'syncStructure') return syncStructure();
 
   return json({ ok: false, error: 'Unknown action' });
 }
 
 function bootstrap() {
-  const itemsData = readItemsData_();
-  ensureCurrentCheckinsBlock_(itemsData);
-  return json({
-    ok: true,
-    items: itemsData.items,
-    checkins: readLatestCheckins_(),
-  });
+  const cached = readCache_();
+  if (cached) return json(cached);
+
+  return json(rebuildCache_());
 }
 
 function getItems() {
@@ -39,9 +39,13 @@ function getItems() {
 }
 
 function getCheckins() {
-  const itemsData = readItemsData_();
-  ensureCurrentCheckinsBlock_(itemsData);
-  return json({ ok: true, checkins: readLatestCheckins_() });
+  const cached = readCache_();
+  if (cached) return json({ ok: true, checkins: cached.checkins || {} });
+  return json({ ok: true, checkins: rebuildCache_().checkins || {} });
+}
+
+function syncStructure() {
+  return json(rebuildCache_());
 }
 
 function saveCheckin(body) {
@@ -51,8 +55,8 @@ function saveCheckin(body) {
   const sheet = SpreadsheetApp.getActive().getSheetByName(CHECKINS_SHEET);
   if (!sheet) return json({ ok: false, error: 'Checkins sheet not found' });
 
-  const values = sheet.getDataRange().getValues();
-  const headerRowIndex = findHeaderRow_(values);
+  const latestValues = readTopCheckinsValues_(sheet, itemsData.items.length);
+  const headerRowIndex = findHeaderRow_(latestValues);
   if (headerRowIndex === -1) return json({ ok: false, error: 'Checkins header row not found' });
 
   const itemLabel = String(body.itemLabel || '').trim();
@@ -60,19 +64,65 @@ function saveCheckin(body) {
   const checked = Boolean(body.checked);
   if (!itemLabel || DAYS.indexOf(day) === -1) return json({ ok: false, error: 'Invalid itemLabel or day' });
 
-  const header = values[headerRowIndex].map(String);
+  const header = latestValues[headerRowIndex].map(String);
   const dayColumns = getDayColumns_(header);
   const dayCol = dayColumns[day];
-  const itemRowIndex = findItemRow_(values, headerRowIndex + 1, itemLabel);
+  const relativeItemRowIndex = findItemRow_(latestValues, headerRowIndex + 1, itemLabel);
   if (dayCol == null) return json({ ok: false, error: 'Day column not found' });
-  if (itemRowIndex === -1) return json({ ok: false, error: 'Item row not found' });
+  if (relativeItemRowIndex === -1) return json({ ok: false, error: 'Item row not found' });
 
-  sheet.getRange(itemRowIndex + 1, dayCol + 1).setValue(checked ? 'Y' : '');
-  sheet.getRange(itemRowIndex + 2, dayCol + 1).setValue(
+  sheet.getRange(relativeItemRowIndex + 1, dayCol + 1).setValue(checked ? 'Y' : '');
+  sheet.getRange(relativeItemRowIndex + 2, dayCol + 1).setValue(
     checked ? Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy/M/d HH:mm') : ''
   );
 
+  writeCache_(buildSnapshot_(itemsData));
   return json({ ok: true });
+}
+
+function rebuildCache_() {
+  const itemsData = readItemsData_();
+  ensureCurrentCheckinsBlock_(itemsData);
+  const snapshot = buildSnapshot_(itemsData);
+  writeCache_(snapshot);
+  return snapshot;
+}
+
+function buildSnapshot_(itemsData) {
+  return {
+    ok: true,
+    items: itemsData.items,
+    checkins: readLatestCheckins_(itemsData.items.length),
+    version: itemsData.version,
+    cachedAt: new Date().toISOString(),
+  };
+}
+
+function readCache_() {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(CACHE_SHEET);
+  if (!sheet) return null;
+
+  const raw = String(sheet.getRange('B1').getValue() || '').trim();
+  if (!raw) return null;
+
+  try {
+    const data = JSON.parse(raw);
+    if (!data || !data.ok || !Array.isArray(data.items)) return null;
+    return data;
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeCache_(snapshot) {
+  const ss = SpreadsheetApp.getActive();
+  let sheet = ss.getSheetByName(CACHE_SHEET);
+  if (!sheet) sheet = ss.insertSheet(CACHE_SHEET);
+
+  sheet.getRange('A1').setValue('updatedAt');
+  sheet.getRange('B1').setValue(JSON.stringify(snapshot));
+  sheet.getRange('A2').setValue(new Date());
+  sheet.hideSheet();
 }
 
 function ensureCurrentCheckinsBlock_(itemsData) {
@@ -80,7 +130,7 @@ function ensureCurrentCheckinsBlock_(itemsData) {
   let sheet = ss.getSheetByName(CHECKINS_SHEET);
   if (!sheet) sheet = ss.insertSheet(CHECKINS_SHEET);
 
-  const existingValues = sheet.getDataRange().getValues();
+  const existingValues = readTopCheckinsValues_(sheet, itemsData.items.length);
   const headerRowIndex = findHeaderRow_(existingValues);
   const latestVersion = getLatestVersion_(existingValues, headerRowIndex);
 
@@ -138,15 +188,32 @@ function readItemsData_() {
   };
 }
 
-function readLatestCheckins_() {
+function readLatestCheckins_(itemCount) {
   const sheet = SpreadsheetApp.getActive().getSheetByName(CHECKINS_SHEET);
   if (!sheet) return {};
 
-  const values = sheet.getDataRange().getDisplayValues();
+  const values = readTopCheckinsDisplayValues_(sheet, itemCount);
   const headerRowIndex = findHeaderRow_(values);
   if (headerRowIndex === -1) return {};
 
   return parseCheckinsBlock_(values, headerRowIndex);
+}
+
+function readTopCheckinsValues_(sheet, itemCount) {
+  const rowCount = getTopBlockReadRows_(sheet, itemCount);
+  return sheet.getRange(1, 1, rowCount, 8).getValues();
+}
+
+function readTopCheckinsDisplayValues_(sheet, itemCount) {
+  const rowCount = getTopBlockReadRows_(sheet, itemCount);
+  return sheet.getRange(1, 1, rowCount, 8).getDisplayValues();
+}
+
+function getTopBlockReadRows_(sheet, itemCount) {
+  const lastRow = sheet.getLastRow();
+  if (!lastRow) return 1;
+  const expectedRows = Math.max(8, itemCount * 2 + 4);
+  return Math.min(lastRow, expectedRows);
 }
 
 function buildCheckinsBlock_(itemsData, previous) {
@@ -216,7 +283,6 @@ function formatLatestBlock_(sheet, rowCount) {
   sheet.getRange(1, 1, 1, 8).setFontWeight('bold').setBackground('#EAF4F1');
   sheet.getRange(2, 1, 1, 8).setFontWeight('bold').setFontColor('#FFFFFF').setBackground('#24766B');
   sheet.getRange(3, 1, rowCount - 2, 8).setWrap(true);
-  sheet.autoResizeColumns(1, 8);
 }
 
 function getLatestVersion_(values, headerRowIndex) {
