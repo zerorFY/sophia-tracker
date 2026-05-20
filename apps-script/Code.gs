@@ -3,7 +3,7 @@ const SECRET_TOKEN = 'PASTE_YOUR_TOKEN_HERE';
 const ITEMS_SHEET = 'Items';
 const CHECKINS_SHEET = 'Checkins';
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const TOP_BLOCK_MAX_ROWS = 80;
+const TOP_BLOCK_MAX_ROWS = 10;
 
 function doGet(e) {
   if (!isAuthorized(e)) return json({ ok: false, error: 'Unauthorized' });
@@ -97,7 +97,7 @@ function readTopCheckinsSnapshot_() {
   const checkins = {};
 
   for (let r = headerRowIndex + 1; r < values.length; r += 2) {
-    const itemLabel = String(values[r][0] || '').trim();
+    const itemLabel = normalizeLabel_(values[r][0]);
     if (!itemLabel) break;
     if (itemLabel === 'WEEK' || itemLabel === 'Item') break;
     if (itemLabel.toLowerCase() === 'update time') continue;
@@ -111,7 +111,7 @@ function readTopCheckinsSnapshot_() {
       if (col == null) return;
 
       const value = String(values[r][col] || '').trim().toUpperCase();
-      const updatedAt = values[r + 1] ? String(values[r + 1][col] || '').trim() : '';
+      const updatedAt = values[r + 1] ? formatDisplayTime_(values[r + 1][col]) : '';
       const scheduled = value !== 'N/A';
 
       itemDays[day] = scheduled;
@@ -154,7 +154,7 @@ function readItemsData_() {
   const items = [];
 
   for (let r = 1; r < values.length; r++) {
-    const itemName = String(values[r][0] || '').trim();
+    const itemName = normalizeLabel_(values[r][0]);
     if (!itemName) continue;
 
     const days = {};
@@ -264,6 +264,18 @@ function getMonday_(date) {
 
 function formatWeekStart_(date) {
   return Utilities.formatDate(date, Session.getScriptTimeZone(), 'yyyy/MM/dd');
+}
+
+function formatDisplayTime_(value) {
+  if (!value) return '';
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), 'yyyy/M/d HH:mm');
+  }
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function normalizeLabel_(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
 }
 
 function hash_(value) {

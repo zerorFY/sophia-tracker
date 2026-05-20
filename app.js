@@ -198,13 +198,6 @@ function renderBody(weekDates) {
                 button.addEventListener('click', () => handleToggle(button, item, day));
                 cell.appendChild(button);
 
-                const updatedAt = checkins[item.id]?.[day]?.updatedAt;
-                if (updatedAt) {
-                    const time = document.createElement('span');
-                    time.className = 'update-time';
-                    time.textContent = updatedAt;
-                    cell.appendChild(time);
-                }
             }
 
             row.appendChild(cell);
@@ -229,7 +222,6 @@ async function handleToggle(button, item, day) {
     checkins[item.id][day] = checkins[item.id][day] || {};
     checkins[item.id][day].checked = checked;
     checkins[item.id][day].updatedAt = checked ? formatDisplayDateTime(new Date()) : '';
-    updateTimeDisplay(button, checkins[item.id][day].updatedAt);
     updateSummary();
 
     try {
@@ -244,28 +236,9 @@ async function handleToggle(button, item, day) {
         checkins[item.id][day].checked = previous;
         checkins[item.id][day].updatedAt = previousUpdatedAt;
         button.classList.toggle('checked', previous);
-        updateTimeDisplay(button, previousUpdatedAt);
         updateSummary();
         showError('\u65e0\u7f51\u7edc\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5');
     }
-}
-
-function updateTimeDisplay(button, value) {
-    const cell = button.closest('.check-cell');
-    if (!cell) return;
-
-    let time = cell.querySelector('.update-time');
-    if (!value) {
-        if (time) time.remove();
-        return;
-    }
-
-    if (!time) {
-        time = document.createElement('span');
-        time.className = 'update-time';
-        cell.appendChild(time);
-    }
-    time.textContent = value;
 }
 
 function showError(message) {

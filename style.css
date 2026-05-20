@@ -309,14 +309,6 @@ h3 {
     color: #fff;
 }
 
-.update-time {
-    display: block;
-    margin-top: 8px;
-    color: var(--muted);
-    font-size: 0.72rem;
-    font-weight: 700;
-}
-
 .empty-row {
     height: 120px;
     color: var(--muted);
