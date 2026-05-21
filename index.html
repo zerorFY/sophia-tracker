@@ -5,42 +5,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Sophia's weekly learning tracker">
-    <title>Sophia's Tracker</title>
-    <link rel="stylesheet" href="style.css?v=kuromi-1">
+    <title>Sophia's Kuromi Week</title>
+    <link rel="stylesheet" href="style.css?v=kuromi-light-1">
 </head>
 
 <body>
-    <div class="floating-deco">💀</div>
-    <div class="floating-deco">🎀</div>
-    <div class="floating-deco">⭐</div>
-    <div class="floating-deco">🖤</div>
-    <div class="floating-deco">✨</div>
-    <div class="floating-deco">🎀</div>
+    <div class="page-pattern" aria-hidden="true"></div>
 
     <main class="app-shell">
-        <section class="topbar">
-            <div>
-                <p class="kuromi-banner">🖤 💀 🎀 ✨ 🎀 💀 🖤</p>
-                <p class="eyebrow">Weekly Quest</p>
-                <h1>Sophia's Tracker</h1>
-                <p class="header-subtitle">✨ A little magic every day ✨</p>
+        <section class="hero">
+            <div class="hero-mascot" aria-hidden="true">
+                <div class="mascot">
+                    <span class="ear ear-left"></span>
+                    <span class="ear ear-right"></span>
+                    <span class="face">
+                        <span class="skull">♡</span>
+                        <span class="eye eye-left"></span>
+                        <span class="eye eye-right"></span>
+                        <span class="blush blush-left"></span>
+                        <span class="blush blush-right"></span>
+                    </span>
+                    <span class="tail"></span>
+                </div>
             </div>
+
+            <div class="hero-copy">
+                <div class="sparkle-row" aria-hidden="true">♡ ☠ 🎀 ✦ 🎀 ☠ ♡</div>
+                <p class="eyebrow">Weekly Quest</p>
+                <h1>Sophia's<br>Kuromi Week</h1>
+                <p class="ribbon"><span>☠</span> Let's do our best! <span>♡</span></p>
+            </div>
+
             <div class="week-card">
+                <span class="calendar-icon" aria-hidden="true">▣</span>
                 <span class="week-label">Current Week</span>
                 <strong id="weekRange">Loading...</strong>
+                <span class="mini-mascot" aria-hidden="true">☠</span>
             </div>
         </section>
 
         <section class="summary-strip" aria-label="Weekly summary">
-            <div>
-                <span class="summary-label">Done</span>
+            <div class="summary-card">
+                <span class="summary-icon">☆</span>
+                <span class="summary-label">Collected</span>
                 <strong id="doneCount">0</strong>
             </div>
-            <div>
-                <span class="summary-label">Total</span>
+            <div class="summary-card">
+                <span class="summary-icon">🎀</span>
+                <span class="summary-label">Missions</span>
                 <strong id="totalCount">0</strong>
             </div>
-            <div>
+            <div class="summary-card">
+                <span class="summary-icon">♡</span>
                 <span class="summary-label">Progress</span>
                 <strong id="progressPct">0%</strong>
             </div>
@@ -56,7 +72,7 @@
 
         <section class="tracker-panel">
             <div class="panel-header">
-                <h2>Weekly Plan</h2>
+                <h2><span aria-hidden="true">🎀</span> This Week's Adventure</h2>
                 <div class="panel-actions">
                     <button id="syncItemsBtn" class="sync-btn" type="button">同步items</button>
                     <button id="syncCheckinsBtn" class="sync-btn primary" type="button">同步打卡记录</button>
@@ -69,7 +85,7 @@
                 <table class="tracker-table">
                     <thead>
                         <tr id="dayHeader">
-                            <th class="item-col">Item</th>
+                            <th class="item-col">Item ✨</th>
                         </tr>
                     </thead>
                     <tbody id="trackerBody"></tbody>
@@ -77,11 +93,15 @@
             </div>
         </section>
 
-        <div class="deco-row">💀 🎀 ⭐ 🖤 ✨ 🎀 💀</div>
-        <footer class="footer">Made with 💜 for Sophia · Kuromi Style 🖤</footer>
+        <div class="sticker-floor" aria-hidden="true">
+            <span class="book-sticker">☠</span>
+            <span class="bat-ribbon">♡──☠──♡</span>
+            <span class="potion-sticker">♡</span>
+        </div>
+        <footer class="footer">Made with 💜 for Sophia</footer>
     </main>
 
-    <script src="app.js?v=kuromi-1"></script>
+    <script src="app.js?v=kuromi-light-1"></script>
 </body>
 
 </html>

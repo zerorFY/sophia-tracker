@@ -130,6 +130,24 @@ function itemIsChecked(itemId, day) {
     return Boolean(checkins[itemId] && checkins[itemId][day] && checkins[itemId][day].checked);
 }
 
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function getItemIcon(label) {
+    const text = String(label || '').toLowerCase();
+    if (text.includes('razkids')) return '▤';
+    if (text.includes('curriculum')) return '▧';
+    if (text.includes('writing')) return '✎';
+    if (text.includes('singapore') || text.includes('mathematics')) return '1²3';
+    return '☆';
+}
+
 function updateSummary() {
     let total = 0;
     let done = 0;
@@ -187,7 +205,13 @@ function renderBody(weekDates) {
         const row = document.createElement('tr');
         const itemCell = document.createElement('td');
         itemCell.className = 'item-cell';
-        itemCell.innerHTML = `<span class="item-name">${item.label}</span>`;
+        itemCell.innerHTML = `
+            <span class="item-content">
+                <span class="item-icon">${escapeHtml(getItemIcon(item.label))}</span>
+                <span class="item-name">${escapeHtml(item.label)}</span>
+                <span class="item-sparkle">☆</span>
+            </span>
+        `;
         row.appendChild(itemCell);
 
         weekDates.forEach(({ day, date }) => {
@@ -197,14 +221,14 @@ function renderBody(weekDates) {
 
             if (!itemIsScheduled(item, day)) {
                 cell.classList.add('disabled');
-                cell.innerHTML = '<span class="not-scheduled">N/A</span>';
+                cell.innerHTML = '<span class="not-scheduled" aria-label="Not scheduled">🎀</span>';
             } else {
                 const button = document.createElement('button');
                 const checked = itemIsChecked(item.id, day);
                 button.type = 'button';
                 button.className = `check-button ${checked ? 'checked' : ''}`;
                 button.setAttribute('aria-label', `${item.label} on ${day}`);
-                button.textContent = 'Y';
+                button.textContent = '';
                 button.addEventListener('click', () => handleToggle(button, item, day));
                 cell.appendChild(button);
             }
@@ -238,7 +262,7 @@ async function syncItemsFromSheet() {
         return;
     }
 
-    if (dirty && !window.confirm('本地有未同步的打卡记录，继续同步items会用Sheet覆盖本地内容。确定继续吗？')) {
+    if (dirty && !window.confirm('本地有未同步的打卡记录，继续同步 items 会用 Sheet 覆盖本地内容。确定继续吗？')) {
         return;
     }
 
