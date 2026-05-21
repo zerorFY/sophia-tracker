@@ -139,13 +139,13 @@ function escapeHtml(value) {
         .replace(/'/g, '&#039;');
 }
 
-function getItemIcon(label) {
+function getItemAsset(label) {
     const text = String(label || '').toLowerCase();
-    if (text.includes('razkids')) return '▤';
-    if (text.includes('curriculum')) return '▧';
-    if (text.includes('writing')) return '✎';
-    if (text.includes('singapore') || text.includes('mathematics')) return '1²3';
-    return '☆';
+    if (text.includes('razkids')) return 'assets/item-1.png';
+    if (text.includes('curriculum')) return 'assets/item-2.png';
+    if (text.includes('writing')) return 'assets/item-3.png';
+    if (text.includes('singapore') || text.includes('mathematics')) return 'assets/item-4.png';
+    return 'assets/item-1.png';
 }
 
 function updateSummary() {
@@ -197,7 +197,7 @@ function renderBody(weekDates) {
     tbody.innerHTML = '';
 
     if (!items.length) {
-        renderEmpty('No local tracker data. Tap 同步items first.');
+        renderEmpty('No local tracker data. Tap 更新 Items first.');
         return;
     }
 
@@ -207,7 +207,7 @@ function renderBody(weekDates) {
         itemCell.className = 'item-cell';
         itemCell.innerHTML = `
             <span class="item-content">
-                <span class="item-icon">${escapeHtml(getItemIcon(item.label))}</span>
+                <span class="item-icon"><img src="${escapeHtml(getItemAsset(item.label))}" alt=""></span>
                 <span class="item-name">${escapeHtml(item.label)}</span>
                 <span class="item-sparkle">☆</span>
             </span>
@@ -221,7 +221,7 @@ function renderBody(weekDates) {
 
             if (!itemIsScheduled(item, day)) {
                 cell.classList.add('disabled');
-                cell.innerHTML = '<span class="not-scheduled" aria-label="Not scheduled">🎀</span>';
+                cell.innerHTML = '<span class="not-scheduled" aria-label="Not scheduled"><img src="assets/not-scheduled.png" alt=""></span>';
             } else {
                 const button = document.createElement('button');
                 const checked = itemIsChecked(item.id, day);
@@ -334,7 +334,7 @@ function render() {
         return;
     }
 
-    renderEmpty('No local tracker data. Tap 同步items first.');
+    renderEmpty('No local tracker data. Tap 更新 Items first.');
     setSaveStatus('Local empty', 'error');
     if (!getApiToken()) showAccessGate();
 }

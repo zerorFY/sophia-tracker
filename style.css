@@ -74,10 +74,22 @@ body {
 .hero {
     min-height: 276px;
     display: grid;
-    grid-template-columns: 270px minmax(420px, 1fr) 330px;
+    grid-template-columns: minmax(520px, 1fr) 330px;
     align-items: center;
     gap: 24px;
     margin-bottom: 18px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 .hero-mascot {
@@ -244,6 +256,13 @@ body {
     align-self: center;
 }
 
+.title-art {
+    display: block;
+    width: min(660px, 100%);
+    height: auto;
+    filter: drop-shadow(0 18px 20px rgba(128, 81, 148, 0.12));
+}
+
 .sparkle-row {
     color: var(--deep-plum);
     font-size: 1.2rem;
@@ -288,7 +307,7 @@ h1::first-line {
 
 .ribbon {
     width: min(460px, 92%);
-    margin: 14px 0 0 74px;
+    margin: 8px 0 0 154px;
     padding: 8px 22px;
     color: var(--deep-plum);
     background: linear-gradient(180deg, #fff3fb, #f4e2ff);
@@ -417,12 +436,17 @@ h1::first-line {
     height: 58px;
     display: grid;
     place-items: center;
-    color: #fff;
-    background: linear-gradient(145deg, #ff93c8, #b992e4);
-    border-radius: 18px;
-    font-size: 2rem;
+    background: transparent;
+    border-radius: 0;
     transform: rotate(-9deg);
-    box-shadow: 0 9px 0 rgba(140, 92, 176, 0.18);
+    box-shadow: none;
+}
+
+.summary-icon img {
+    max-width: 76px;
+    max-height: 76px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 8px rgba(116, 76, 138, 0.16));
 }
 
 .summary-card strong {
@@ -613,13 +637,18 @@ h1::first-line {
 }
 
 .item-icon {
-    width: 48px;
-    height: 48px;
+    width: 58px;
+    height: 58px;
     display: grid;
     place-items: center;
-    color: var(--plum);
-    font-size: 2rem;
     transform: rotate(-8deg);
+}
+
+.item-icon img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    filter: drop-shadow(0 5px 5px rgba(96, 64, 114, 0.15));
 }
 
 .item-name {
@@ -665,17 +694,21 @@ h1::first-line {
 .not-scheduled {
     display: inline-grid;
     place-items: center;
-    width: 58px;
-    height: 44px;
-    color: #ba90d3;
-    font-size: 2.25rem;
-    opacity: 0.78;
-    filter: drop-shadow(0 3px 0 rgba(165, 116, 195, 0.18));
+    width: 70px;
+    height: 70px;
+}
+
+.not-scheduled img {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    opacity: 0.76;
+    filter: drop-shadow(0 5px 5px rgba(125, 82, 153, 0.16));
 }
 
 .check-button {
-    width: 66px;
-    height: 66px;
+    width: 82px;
+    height: 82px;
     border: 0;
     border-radius: 50%;
     background: transparent;
@@ -685,19 +718,12 @@ h1::first-line {
 }
 
 .check-button::before {
-    content: "☠";
+    content: "";
     position: absolute;
-    inset: 3px;
+    inset: 0;
     display: grid;
     place-items: center;
-    color: #ffffff;
-    background:
-        radial-gradient(circle at 50% 38%, #ffffff 0 26%, transparent 27%),
-        linear-gradient(145deg, #2f2937, #534a5f);
-    border: 4px solid #ffffff;
-    border-radius: 50%;
-    box-shadow: 0 8px 0 rgba(101, 79, 121, 0.12);
-    font-size: 2.1rem;
+    background: url("assets/checked.png") center / contain no-repeat;
     opacity: 0.27;
     filter: grayscale(1);
 }
@@ -728,9 +754,6 @@ h1::first-line {
 .check-button.checked::before {
     opacity: 1;
     filter: none;
-    background:
-        radial-gradient(circle at 50% 38%, #ffffff 0 26%, transparent 27%),
-        linear-gradient(145deg, #241c31, #7e65ad);
 }
 
 .check-button.checked::after {
@@ -769,24 +792,26 @@ h1::first-line {
 
 .book-sticker,
 .potion-sticker {
-    width: 62px;
-    height: 62px;
+    width: 72px;
+    height: 72px;
     display: grid;
     place-items: center;
-    border: 3px solid #211b27;
-    background: #332441;
-    color: #ff9cca;
-    box-shadow: 0 8px 0 rgba(112, 77, 130, 0.14);
 }
 
 .book-sticker {
-    border-radius: 12px;
     transform: rotate(-13deg);
 }
 
 .potion-sticker {
-    border-radius: 44% 44% 50% 50%;
     transform: rotate(12deg);
+}
+
+.book-sticker img,
+.potion-sticker img {
+    width: 78px;
+    height: 78px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 8px rgba(77, 45, 96, 0.16));
 }
 
 .bat-ribbon {
@@ -812,17 +837,6 @@ h1::first-line {
         grid-template-columns: 1fr;
         min-height: 0;
         text-align: center;
-    }
-
-    .hero-mascot {
-        min-height: 198px;
-    }
-
-    .mascot {
-        left: 50%;
-        top: 0;
-        transform: translateX(-50%) rotate(-5deg) scale(0.82);
-        transform-origin: top center;
     }
 
     .ribbon {
@@ -859,16 +873,8 @@ h1::first-line {
         width: min(100% - 16px, 640px);
     }
 
-    h1 {
-        font-size: clamp(3rem, 17vw, 4.2rem);
-    }
-
-    .hero-mascot {
-        min-height: 176px;
-    }
-
-    .mascot {
-        transform: translateX(-50%) rotate(-5deg) scale(0.72);
+    .title-art {
+        width: min(100%, 520px);
     }
 
     .week-card {

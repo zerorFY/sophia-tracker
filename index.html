@@ -14,25 +14,9 @@
 
     <main class="app-shell">
         <section class="hero">
-            <div class="hero-mascot" aria-hidden="true">
-                <div class="mascot">
-                    <span class="ear ear-left"></span>
-                    <span class="ear ear-right"></span>
-                    <span class="face">
-                        <span class="skull">♡</span>
-                        <span class="eye eye-left"></span>
-                        <span class="eye eye-right"></span>
-                        <span class="blush blush-left"></span>
-                        <span class="blush blush-right"></span>
-                    </span>
-                    <span class="tail"></span>
-                </div>
-            </div>
-
             <div class="hero-copy">
-                <div class="sparkle-row" aria-hidden="true">♡ ☠ 🎀 ✦ 🎀 ☠ ♡</div>
-                <p class="eyebrow">Weekly Quest</p>
-                <h1>Sophia's<br>Kuromi Week</h1>
+                <h1 class="sr-only">Sophia's Kuromi Week</h1>
+                <img class="title-art" src="assets/title-transparent.png" alt="Sophia's Kuromi Week">
                 <p class="ribbon"><span>☠</span> Let's do our best! <span>♡</span></p>
             </div>
 
@@ -46,17 +30,17 @@
 
         <section class="summary-strip" aria-label="Weekly summary">
             <div class="summary-card">
-                <span class="summary-icon">☆</span>
+                <span class="summary-icon"><img src="assets/item-3.png" alt=""></span>
                 <span class="summary-label">Collected</span>
                 <strong id="doneCount">0</strong>
             </div>
             <div class="summary-card">
-                <span class="summary-icon">🎀</span>
+                <span class="summary-icon"><img src="assets/item-2.png" alt=""></span>
                 <span class="summary-label">Missions</span>
                 <strong id="totalCount">0</strong>
             </div>
             <div class="summary-card">
-                <span class="summary-icon">♡</span>
+                <span class="summary-icon"><img src="assets/item-4.png" alt=""></span>
                 <span class="summary-label">Progress</span>
                 <strong id="progressPct">0%</strong>
             </div>
@@ -74,7 +58,7 @@
             <div class="panel-header">
                 <h2><span aria-hidden="true">🎀</span> This Week's Adventure</h2>
                 <div class="panel-actions">
-                    <button id="syncItemsBtn" class="sync-btn" type="button">同步items</button>
+                    <button id="syncItemsBtn" class="sync-btn" type="button">更新 Items</button>
                     <button id="syncCheckinsBtn" class="sync-btn primary" type="button">同步打卡记录</button>
                     <span id="saveStatus" class="save-status">Local</span>
                 </div>
@@ -94,9 +78,9 @@
         </section>
 
         <div class="sticker-floor" aria-hidden="true">
-            <span class="book-sticker">☠</span>
+            <span class="book-sticker"><img src="assets/item-1.png" alt=""></span>
             <span class="bat-ribbon">♡──☠──♡</span>
-            <span class="potion-sticker">♡</span>
+            <span class="potion-sticker"><img src="assets/item-4.png" alt=""></span>
         </div>
         <footer class="footer">Made with 💜 for Sophia</footer>
     </main>
