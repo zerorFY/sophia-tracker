@@ -271,8 +271,8 @@ async function syncItemsFromSheet() {
     }
 
     try {
-        setSaveStatus('Syncing items...', 'saving');
-        const data = await getJson('bootstrap');
+        setSaveStatus('Updating items...', 'saving');
+        const data = await postJson('syncStructure', {});
         items = data.items || [];
         checkins = data.checkins || {};
         dirty = false;
