@@ -139,13 +139,17 @@ function escapeHtml(value) {
         .replace(/'/g, '&#039;');
 }
 
-function getItemAsset(label) {
+function getItemAsset(item, index) {
+    const cyclicAsset = `assets/item-${(index % 4) + 1}.png`;
+    if (index >= 4) return cyclicAsset;
+
+    const label = item && item.label;
     const text = String(label || '').toLowerCase();
     if (text.includes('razkids')) return 'assets/item-1.png';
     if (text.includes('curriculum')) return 'assets/item-2.png';
     if (text.includes('writing')) return 'assets/item-3.png';
     if (text.includes('singapore') || text.includes('mathematics')) return 'assets/item-4.png';
-    return 'assets/item-1.png';
+    return cyclicAsset;
 }
 
 function updateSummary() {
@@ -207,7 +211,7 @@ function renderBody(weekDates) {
         itemCell.className = 'item-cell';
         itemCell.innerHTML = `
             <span class="item-content">
-                <span class="item-icon"><img src="${escapeHtml(getItemAsset(item.label))}" alt=""></span>
+                <span class="item-icon"><img src="${escapeHtml(getItemAsset(item, index))}" alt=""></span>
                 <span class="item-name">${escapeHtml(item.label)}</span>
                 <span class="item-sparkle">☆</span>
             </span>

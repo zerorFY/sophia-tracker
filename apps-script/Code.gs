@@ -3,7 +3,7 @@ const SECRET_TOKEN = 'PASTE_YOUR_TOKEN_HERE';
 const ITEMS_SHEET = 'Items';
 const CHECKINS_SHEET = 'Checkins';
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const TOP_BLOCK_MAX_ROWS = 10;
+const TOP_BLOCK_MAX_ROWS = 24;
 
 function doGet(e) {
   if (!isAuthorized(e)) return json({ ok: false, error: 'Unauthorized' });
