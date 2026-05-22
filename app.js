@@ -205,7 +205,7 @@ function renderBody(weekDates) {
         return;
     }
 
-    items.forEach(item => {
+    items.forEach((item, index) => {
         const row = document.createElement('tr');
         const itemCell = document.createElement('td');
         itemCell.className = 'item-cell';
